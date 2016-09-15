@@ -54,6 +54,8 @@ int readP6 (FILE* fh) {
 
   unsigned char pixel[3];
 
+  fread(pixel, sizeof(unsigned char), 3, fh); // skip over bad character
+
   for (int i = 0; i < numPixels; i++) {
     fread(pixel, sizeof(unsigned char), 3, fh);
     pixmap[i].R = pixel[0];
@@ -101,7 +103,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Get the image metadata
-  fscanf(fh, "%s %i %i %i", format, &w, &h, &maxColor);
+  fscanf(fh, "%s %i %i %i\n", format, &w, &h, &maxColor);
   numPixels = w * h;
 
   // Allocate memory for the pixel map
