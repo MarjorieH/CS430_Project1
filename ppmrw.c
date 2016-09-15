@@ -29,9 +29,13 @@ int readP3 (FILE* fh) {
     if ((fscanf(fh, "%i", &r) != EOF) &&
         (fscanf(fh, "%i", &g) != EOF) &&
         (fscanf(fh, "%i", &b) != EOF)) {
-          pixmap[i].R = r;
-          pixmap[i].G = g;
-          pixmap[i].B = b;
+      if (r > maxColor || g > maxColor || b > maxColor) {
+        fprintf(stderr, "Error: Image data is not 8 bits per channel.\n");
+        return(0);
+      }
+      pixmap[i].R = r;
+      pixmap[i].G = g;
+      pixmap[i].B = b;
     }
     else {
       // Hit the end of the file before finished reading all of the pixels
@@ -107,6 +111,10 @@ int main(int argc, char *argv[]) {
 
   // Get the image metadata
   fscanf(fh, "%s %i %i %i\n", format, &w, &h, &maxColor);
+  if (maxColor > 255) {
+    fprintf(stderr, "Error: Image data is not 8 bits per channel.\n");
+    return(1);
+  }
   numPixels = w * h;
 
   // Allocate memory for the pixel map
