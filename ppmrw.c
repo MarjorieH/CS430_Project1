@@ -54,13 +54,16 @@ int readP6 (FILE* fh) {
 
   unsigned char pixel[3];
 
-  fread(pixel, sizeof(unsigned char), 3, fh); // skip over bad character
-
   for (int i = 0; i < numPixels; i++) {
-    fread(pixel, sizeof(unsigned char), 3, fh);
-    pixmap[i].R = pixel[0];
-    pixmap[i].G = pixel[1];
-    pixmap[i].B = pixel[2];
+    if (fread(pixel, sizeof(unsigned char), 3, fh) != 3) {
+      fprintf(stderr, "Error: Image data is not 8 bits per channel.\n");
+      return(0);
+    }
+    else {
+      pixmap[i].R = pixel[0];
+      pixmap[i].G = pixel[1];
+      pixmap[i].B = pixel[2];
+    }
   }
 
   return(1);
