@@ -52,18 +52,13 @@ int readP3 (FILE* fh) {
 
 int readP6 (FILE* fh) {
 
-  // Fill the pixel map up with the image data
-  int pixelsRead = fread(pixmap, sizeof(RGBpixel), numPixels, fh);
+  unsigned char pixel[3];
 
-  if (pixelsRead != numPixels) {
-    fprintf(stderr, "Error: Could not read all of the image data.\n");
-    return(0);
-  }
-
-  if (!feof(fh)) {
-    // Finished reading the file, but there is still data left over
-    fprintf(stderr, "Error: Image data exceeds 8 bits per channel.\n");
-    return(0);
+  for (int i = 0; i < numPixels; i++) {
+    fread(pixel, sizeof(unsigned char), 3, fh);
+    pixmap[i].R = pixel[0];
+    pixmap[i].G = pixel[1];
+    pixmap[i].B = pixel[2];
   }
 
   return(1);
@@ -73,6 +68,16 @@ int readP6 (FILE* fh) {
 int writeP3(FILE* fh) {
   for (int i = 0; i < numPixels; i++) {
     fprintf(fh, "%i %i %i\n", pixmap[i].R, pixmap[i].G, pixmap[i].B);
+  }
+  return(1);
+}
+
+
+int writeP6(FILE* fh) {
+  int pixelsWritten = fwrite(pixmap, sizeof(RGBpixel), numPixels, fh);
+  if (pixelsWritten != numPixels) {
+    fprintf(stderr, "Error: Could not write all of the image data.\n");
+    return(0);
   }
   return(1);
 }
@@ -98,12 +103,6 @@ int main(int argc, char *argv[]) {
   // Get the image metadata
   fscanf(fh, "%s %i %i %i", format, &w, &h, &maxColor);
   numPixels = w * h;
-
-  printf("Format: %s\n", format);
-  printf("Width: %i\n", w);
-  printf("Height: %i\n", h);
-  printf("Max Color: %i\n", maxColor);
-  printf("Total Pixels: %i\n", numPixels);
 
   // Allocate memory for the pixel map
   pixmap = malloc(sizeof(RGBpixel) * numPixels);
@@ -134,7 +133,9 @@ int main(int argc, char *argv[]) {
     }
   }
   else if (!strcmp(writingFormat, "6")) {
-    // WRITE P6 DATA
+    if (!writeP6(outFile)) {
+      return(1);
+    }
   }
   else {
     fprintf(stderr, "Error: Unrecognized image format.\n");
