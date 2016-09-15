@@ -50,6 +50,26 @@ int readP3 (FILE* fh) {
 }
 
 
+int readP6 (FILE* fh) {
+
+  // Fill the pixel map up with the image data
+  int pixelsRead = fread(pixmap, sizeof(RGBpixel), numPixels, fh);
+
+  if (pixelsRead != numPixels) {
+    fprintf(stderr, "Error: Could not read all of the image data.\n");
+    return(0);
+  }
+
+  if (!feof(fh)) {
+    // Finished reading the file, but there is still data left over
+    fprintf(stderr, "Error: Image data exceeds 8 bits per channel.\n");
+    return(0);
+  }
+
+  return(1);
+}
+
+
 int writeP3(FILE* fh) {
   for (int i = 0; i < numPixels; i++) {
     fprintf(fh, "%i %i %i\n", pixmap[i].R, pixmap[i].G, pixmap[i].B);
@@ -95,7 +115,9 @@ int main(int argc, char *argv[]) {
     }
   }
   else if (!strcmp(format, "P6")) {
-    // READ P6 DATA
+    if (!readP6(fh)) {
+      return(1);
+    }
   }
   else {
     fprintf(stderr, "Error: Unrecognized image format.\n");
