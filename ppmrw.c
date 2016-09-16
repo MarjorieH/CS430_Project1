@@ -22,6 +22,9 @@ char format[64]; // format of the image, supports P3 or P6
 RGBpixel *pixmap; // array of pixels to hold the image data
 
 
+/* Reads in P3 formatted data into the pixmap
+ * Takes in the file handler of the file to be read in, beginning at the image data
+ * Returns 1 upon success, 0 upon failure */
 int readP3 (FILE* fh) {
   // Fill the pixel map up with the image data
   int r, g, b;
@@ -54,6 +57,9 @@ int readP3 (FILE* fh) {
 }
 
 
+/* Reads in P6 formatted data into the pixmap
+ * Takes in the file handler of the file to be read in, beginning at the image data
+ * Returns 1 upon success, 0 upon failure */
 int readP6 (FILE* fh) {
 
   unsigned char pixel[3];
@@ -79,6 +85,9 @@ int readP6 (FILE* fh) {
 }
 
 
+/* Writes P3 formatted data to a file
+ * Takes in the file handler of the file to be written to
+ * Returns 1 upon success */
 int writeP3(FILE* fh) {
   for (int i = 0; i < numPixels; i++) {
     fprintf(fh, "%i %i %i\n", pixmap[i].R, pixmap[i].G, pixmap[i].B);
@@ -88,6 +97,9 @@ int writeP3(FILE* fh) {
 }
 
 
+/* Writes P6 formatted data to a file
+ * Takes in the file handler of the file to be written to
+ * Returns 1 upon success */
 int writeP6(FILE* fh) {
   int pixelsWritten = fwrite(pixmap, sizeof(RGBpixel), numPixels, fh);
   if (pixelsWritten != numPixels) {
@@ -179,12 +191,12 @@ int main(int argc, char *argv[]) {
   FILE* outFile = fopen(argv[3], "w");
   char* writingFormat = argv[1];
   fprintf(outFile, "P%s\n%i %i\n%i\n", writingFormat, w, h, maxColor);
-  if (!strcmp(writingFormat, "3")) {
+  if (!strcmp(writingFormat, "3")) { // writing P3 image data
     if (!writeP3(outFile)) {
       return(1);
     }
   }
-  else if (!strcmp(writingFormat, "6")) {
+  else if (!strcmp(writingFormat, "6")) { // writing P6 image data
     if (!writeP6(outFile)) {
       return(1);
     }
