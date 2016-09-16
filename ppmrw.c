@@ -14,12 +14,12 @@ typedef struct RGBpixel {
 } RGBpixel;
 
 // Global variables to hold image data
-int w;
-int h;
-int maxColor;
-int numPixels;
-char format[2];
-RGBpixel *pixmap;
+int w; // image width in pixels
+int h; // image height in pixels
+int maxColor; // maximum numeric color value for the image
+int numPixels; // total number of pixels in image (w * h)
+char format[64]; // format of the image, supports P3 or P6
+RGBpixel *pixmap; // array of pixels to hold the image data
 
 
 int readP3 (FILE* fh) {
@@ -69,7 +69,12 @@ int readP6 (FILE* fh) {
       pixmap[i].B = pixel[2];
     }
   }
-
+  int extra;
+  if (fscanf(fh, "%i", &extra) != EOF) {
+    // Finished reading the file, but there is still data left over
+    fprintf(stderr, "Error: Image data exceeds 8 bits per channel.\n");
+    return(0);
+  }
   return(1);
 }
 
@@ -78,6 +83,7 @@ int writeP3(FILE* fh) {
   for (int i = 0; i < numPixels; i++) {
     fprintf(fh, "%i %i %i\n", pixmap[i].R, pixmap[i].G, pixmap[i].B);
   }
+  fclose(fh);
   return(1);
 }
 
@@ -88,6 +94,7 @@ int writeP6(FILE* fh) {
     fprintf(stderr, "Error: Could not write all of the image data.\n");
     return(0);
   }
+  fclose(fh);
   return(1);
 }
 
@@ -109,8 +116,40 @@ int main(int argc, char *argv[]) {
     return(1);
   }
 
-  // Get the image metadata
-  fscanf(fh, "%s %i %i %i\n", format, &w, &h, &maxColor);
+  // Get the image metadata from the header, making sure to skip over comments
+  int headerCount = 0;
+  char buffer[64];
+  while (headerCount < 4) {
+    if (!fscanf(fh, "%s", buffer)) { // scan in a value
+      fprintf(stderr, "Error: Insufficient image data.\n");
+      return(1);
+    }
+    if (!strcmp("#", buffer)) { // check if we just scanned in a comment
+      int c = fgetc(fh);
+      while (c != 10) { // skip the line since it is a comment
+        c = fgetc(fh);
+      }
+    }
+    else { // otherwise, save the line based on where we are in the header
+      if (headerCount == 0) { // save format
+        strcpy(format, buffer);
+      }
+      else if (headerCount == 1) { // save width
+        w = atoi(buffer);
+      }
+      else if (headerCount == 2) { // save height
+        h = atoi(buffer);
+      }
+      else { // save maximum color value
+        maxColor = atoi(buffer);
+      }
+      headerCount++;
+    }
+  }
+  // make sure that the file handler is pointing to the
+  // start of the image data before beginning to read it in
+  fscanf(fh, "\n");
+
   if (maxColor > 255) {
     fprintf(stderr, "Error: Image data is not 8 bits per channel.\n");
     return(1);
