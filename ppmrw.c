@@ -3,10 +3,10 @@
 #include <string.h>
 
 // Prototype declarations
-int readP3(FILE* fh);
-int readP6(FILE* fh);
-int writeP3(FILE* fh);
-int writeP6(FILE* fh);
+void readP3(FILE* fh);
+void readP6(FILE* fh);
+void writeP3(FILE* fh);
+void writeP6(FILE* fh);
 
 // Structure to hold RGB pixel data
 typedef struct RGBpixel {
@@ -23,9 +23,8 @@ RGBpixel *pixmap; // array of pixels to hold the image data
 
 
 /* Reads in P3 formatted data into the pixmap
- * Takes in the file handler of the file to be read in, beginning at the image data
- * Returns 1 upon success, 0 upon failure */
-int readP3 (FILE* fh) {
+ * Takes in the file handler of the file to be read in, beginning at the image data */
+void readP3 (FILE* fh) {
   // Fill the pixel map up with the image data
   int r, g, b;
   for (int i = 0; i < numPixels; i++) {
@@ -34,7 +33,7 @@ int readP3 (FILE* fh) {
         (fscanf(fh, "%i", &b) != EOF)) {
       if (r > maxColor || g > maxColor || b > maxColor) {
         fprintf(stderr, "Error: Image data is not 8 bits per channel.\n");
-        return(0);
+        exit(1);
       }
       pixmap[i].R = r;
       pixmap[i].G = g;
@@ -43,7 +42,7 @@ int readP3 (FILE* fh) {
     else {
       // Hit the end of the file before finished reading all of the pixels
       fprintf(stderr, "Error: Image data cannot fill 8 bits per channel.\n");
-      return(0);
+      exit(1);
     }
   }
 
@@ -51,23 +50,21 @@ int readP3 (FILE* fh) {
   if (fscanf(fh, "%i", &extra) != EOF) {
     // Finished reading the file, but there is still data left over
     fprintf(stderr, "Error: Image data exceeds 8 bits per channel.\n");
-    return(0);
+    exit(1);
   }
-  return(1);
 }
 
 
 /* Reads in P6 formatted data into the pixmap
- * Takes in the file handler of the file to be read in, beginning at the image data
- * Returns 1 upon success, 0 upon failure */
-int readP6 (FILE* fh) {
+ * Takes in the file handler of the file to be read in, beginning at the image data */
+void readP6 (FILE* fh) {
 
   unsigned char pixel[3];
 
   for (int i = 0; i < numPixels; i++) {
     if (fread(pixel, sizeof(unsigned char), 3, fh) != 3) {
       fprintf(stderr, "Error: Image data is not 8 bits per channel.\n");
-      return(0);
+      exit(1);
     }
     else {
       pixmap[i].R = pixel[0];
@@ -79,35 +76,30 @@ int readP6 (FILE* fh) {
   if (fscanf(fh, "%i", &extra) != EOF) {
     // Finished reading the file, but there is still data left over
     fprintf(stderr, "Error: Image data exceeds 8 bits per channel.\n");
-    return(0);
+    exit(1);
   }
-  return(1);
 }
 
 
 /* Writes P3 formatted data to a file
- * Takes in the file handler of the file to be written to
- * Returns 1 upon success */
-int writeP3(FILE* fh) {
+ * Takes in the file handler of the file to be written to */
+void writeP3(FILE* fh) {
   for (int i = 0; i < numPixels; i++) {
     fprintf(fh, "%i %i %i\n", pixmap[i].R, pixmap[i].G, pixmap[i].B);
   }
   fclose(fh);
-  return(1);
 }
 
 
 /* Writes P6 formatted data to a file
- * Takes in the file handler of the file to be written to
- * Returns 1 upon success */
-int writeP6(FILE* fh) {
+ * Takes in the file handler of the file to be written to */
+void writeP6(FILE* fh) {
   int pixelsWritten = fwrite(pixmap, sizeof(RGBpixel), numPixels, fh);
   if (pixelsWritten != numPixels) {
     fprintf(stderr, "Error: Could not write all of the image data.\n");
-    return(0);
+    exit(1);
   }
   fclose(fh);
-  return(1);
 }
 
 
@@ -172,15 +164,11 @@ int main(int argc, char *argv[]) {
   pixmap = malloc(sizeof(RGBpixel) * numPixels);
 
   // Read image data into memory based on format
-  if (!strcmp(format, "P3")) {
-    if (!readP3(fh)) {
-      return(1);
-    }
+  if (!strcmp(format, "P3")) { // reading P3 image data
+    readP3(fh);
   }
-  else if (!strcmp(format, "P6")) {
-    if (!readP6(fh)) {
-      return(1);
-    }
+  else if (!strcmp(format, "P6")) { // reading P6 image data
+    readP6(fh);
   }
   else {
     fprintf(stderr, "Error: Unrecognized image format.\n");
@@ -192,14 +180,10 @@ int main(int argc, char *argv[]) {
   char* writingFormat = argv[1];
   fprintf(outFile, "P%s\n%i %i\n%i\n", writingFormat, w, h, maxColor);
   if (!strcmp(writingFormat, "3")) { // writing P3 image data
-    if (!writeP3(outFile)) {
-      return(1);
-    }
+    writeP3(outFile);
   }
   else if (!strcmp(writingFormat, "6")) { // writing P6 image data
-    if (!writeP6(outFile)) {
-      return(1);
-    }
+    writeP6(outFile);
   }
   else {
     fprintf(stderr, "Error: Unrecognized image format.\n");
